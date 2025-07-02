@@ -11,11 +11,14 @@ router.post('/post', auth, requireAdmin, mediaUploadMiddleware, eventController.
 // Get all events
 router.get('/', eventController.getAllEvents);
 
+// for admin get all
+router.get('/getAll', auth, requireAdmin, eventController.getAllEventsAdmin);
+
 // Get single event
 router.get('/:id', eventController.getEventById);
 
 // Update event
-router.put('/:id', auth, requireAdmin, eventController.updateEvent);
+router.put('/:id', auth, requireAdmin, mediaUploadMiddleware, eventController.updateEvent);
 
 // Delete event
 router.delete('/:id', auth, requireAdmin, eventController.deleteEvent);

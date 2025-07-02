@@ -13,13 +13,15 @@ const safeJsonParse = (input, fallback = null) => {
 
 export const createEvent = async (req, res) => {
     try {
-        const { title, description, eventDate, eventTime, duration, location, ageLimit, layout, seating, kidFriendly, petFriendly,
-            instructions, termsAndConditions, faq, prohibitedItems, ticketCategories, city, artists } = req.body;
+        const {
+            title, description, eventDate, eventTime, duration, location, ageLimit,
+            layout, seating, kidFriendly, petFriendly, instructions, termsAndConditions,
+            faq, prohibitedItems, ticketCategories, city, artists
+        } = req.body;
 
         const images = req.convertedFiles?.images || [];
         const videos = req.convertedFiles?.videos || [];
 
-        // Safe parsing with fallback + nullish coalescing
         const parsedCategories = safeJsonParse(ticketCategories, []) ?? [];
         const formattedCategories = parsedCategories.map(cat => ({ ...cat, remainingQuantity: cat.totalQuantity }));
 
@@ -64,6 +66,16 @@ export const createEvent = async (req, res) => {
 export const getAllEvents = async (req, res) => {
     try {
         const events = await Event.find({}, '_id title banner eventDate location city').sort({ eventDate: 1 });
+        return handleResponse(res, 200, 'Events fetched successfully', events);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
+//for admin
+export const getAllEventsAdmin = async (req, res) => {
+    try {
+        const events = await Event.find().sort({ eventDate: 1 });
         return handleResponse(res, 200, 'Events fetched successfully', events);
     } catch (error) {
         return handleError(res, error);
@@ -154,6 +166,3 @@ export const deleteEvent = async (req, res) => {
         return handleError(res, error);
     }
 };
-
-
-

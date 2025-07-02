@@ -1,4 +1,3 @@
-
 // app/controllers/artistController.js
 import Artist from '../../models/lists/artiste.js';
 import { handleResponse, handleError } from '../../utils/responseHandler.js';
@@ -51,6 +50,7 @@ export const updateArtist = async (req, res) => {
         };
 
         const updatedArtist = await Artist.findByIdAndUpdate(id, updatedData, { new: true });
+
         return handleResponse(res, 200, 'Artist updated successfully', updatedArtist);
     } catch (error) {
         return handleError(res, error);
