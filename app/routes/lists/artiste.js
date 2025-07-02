@@ -10,7 +10,7 @@ const router = express.Router();
 router.get('/', listController.getAllArtists);
 router.get('/:id', listController.getArtistById);
 router.post('/', auth, requireAdmin, mediaUploadMiddleware, listController.createArtist);
-router.put('/:id', auth, requireAdmin,listController.updateArtist);
+router.put('/:id', auth, requireAdmin,mediaUploadMiddleware,listController.updateArtist);
 router.delete('/:id', auth, requireAdmin,listController.deleteArtist);
 
 export default router;

@@ -33,7 +33,7 @@ const io = new SocketIOServer(server, {
 // Middleware
 app.use(cors());
 app.use(morgan('dev'));
-app.use(express.json());
+app.use(express.json()); 
 app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
 
 // Static Media

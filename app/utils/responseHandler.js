@@ -1,5 +1,6 @@
 export const handleResponse = (res, statusCode = 200, message = '', data = null, error = false) => {
     return res.status(statusCode).json({
+        statusCode,
         error,
         message,
         data
