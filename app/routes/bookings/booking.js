@@ -9,6 +9,6 @@ const router = express.Router();
 router.post('/create', auth, bookingController.createBooking);
 router.post('/verify', auth, bookingController.verifyPayment);
 router.get('/scan/:data', bookingController.scanQrCode);
-router.get('/analytics', auth, requireAdmin, bookingController.getEventAnalytics);
-
+router.get('/', auth, requireAdmin, bookingController.getAllBookings);
+router.get('/analytics/event', auth, requireAdmin, bookingController.getEventDetailedAnalytics);
 export default router;
