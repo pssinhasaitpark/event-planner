@@ -17,7 +17,12 @@ router.delete('/:id', auth, requireAdmin, productController.deleteProduct);
 
 router.get('/category/:id', auth, requireAdmin, productController.getCategoryById);
 router.put('/category/:id', auth, requireAdmin, productController.updateCategory);
+router.get('/all-orders', auth, requireAdmin, productController.getAllOrders);
 router.get('/products', productController.getAllProducts);
 router.get('/:id', productController.getProductById);
+
+router.post('/razorpay/order', auth, productController.createRazorpayOrder);
+router.post('/order/verify-payment', auth, productController.verifyAndPlaceOrder);
+
 
 export default router;

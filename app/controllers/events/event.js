@@ -63,11 +63,47 @@ export const createEvent = async (req, res) => {
     }
 };
 
+//for client with querry filters
 export const getAllEvents = async (req, res) => {
     try {
-        const events = await Event.find({}, '_id title banner eventDate location city').sort({ eventDate: 1 });
-        return handleResponse(res, 200, 'Events fetched successfully', events);
+        const { page = 1, limit = 10, title, city, layout, seating, kidFriendly, petFriendly, artist, startDate, endDate } = req.query;
+
+        const query = {};
+
+        if (title) query.title = { $regex: title, $options: 'i' };
+        if (city) query.city = city;
+        if (layout) query.layout = layout;
+        if (seating) query.seating = seating;
+        if (kidFriendly !== undefined) query.kidFriendly = kidFriendly === 'true';
+        if (petFriendly !== undefined) query.petFriendly = petFriendly === 'true';
+        if (artist) query.artists = artist;
+
+        // Date range filtering
+        if (startDate && endDate) {
+            query.eventDate = { $gte: new Date(startDate), $lte: new Date(endDate) };
+        } else if (startDate) {
+            query.eventDate = { $gte: new Date(startDate) };
+        } else if (endDate) {
+            query.eventDate = { $lte: new Date(endDate) };
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const total = await Event.countDocuments(query);
+
+        const events = await Event.find(query)
+            .sort({ eventDate: 1 })
+            .skip(skip)
+            .limit(parseInt(limit))
+            .select('_id title banner eventDate location city');
+
+        return handleResponse(res, 200, 'Events fetched successfully', {
+            events,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit))
+        });
     } catch (error) {
+        console.error('Error in getAllEvents:', error);
         return handleError(res, error);
     }
 };

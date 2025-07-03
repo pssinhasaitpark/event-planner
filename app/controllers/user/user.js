@@ -174,14 +174,11 @@ export const deleteUser = async (req, res) => {
 export const me = async (req, res) => {
     try {
         const userId = req.user.id;
-
         const user = await User.findById(userId).select('-password');  
-
-
         return handleResponse(res, 200, 'user data fetched successfully', user);
 
     } catch (error) {
-        console.error(error);
+        // console.error(error);
         return handleError(res, error);
     }
 };
