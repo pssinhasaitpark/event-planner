@@ -6,6 +6,10 @@ import Booking from './bookings/booking.js';
 import Category from './products/category.js'; 
 import Product from './products/product.js'; 
 import ProductOrder from './products/productOrder.js'; 
+import FAQ from './pageContent/faq.js'; 
+import Policy from './pageContent/policyAndTerms.js'; 
+import QuickLink from './pageContent/quickLink.js'; 
+import Service from './ourServices/ourServices.js'; 
 
 export {
     User,
@@ -15,4 +19,8 @@ export {
     Category,
     Product,
     ProductOrder,
+    FAQ,
+    Policy,
+    QuickLink,
+    Service,
 };
