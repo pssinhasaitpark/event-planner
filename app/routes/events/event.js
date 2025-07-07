@@ -23,4 +23,7 @@ router.put('/:id', auth, requireAdmin, mediaUploadMiddleware, eventController.up
 // Delete event
 router.delete('/:id', auth, requireAdmin, eventController.deleteEvent);
 
+router.patch('/:id/toggle-active', auth, requireAdmin, eventController.toggleEventActive);
+
+
 export default router;

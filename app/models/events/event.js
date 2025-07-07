@@ -44,7 +44,9 @@
 
         artists: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Artist' }],
 
-        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+        createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+        isActive: { type: Boolean, default: true },
+        isDeleted: { type: Boolean, default: false },
     }, { timestamps: true });
 
     const Event = mongoose.model('Event', eventSchema);

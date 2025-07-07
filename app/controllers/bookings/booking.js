@@ -105,16 +105,32 @@ export const scanQrCode = async (req, res) => {
     }
 };
 
+// Event Detailed Analytics
 export const getEventDetailedAnalytics = async (req, res) => {
     try {
-        const { eventId } = req.query;
+        const { eventId, month, year, startDate, endDate, page = 1, limit = 10 } = req.query;
 
         const matchQuery = { paymentStatus: 'paid' };
         if (eventId) matchQuery.event = eventId;
 
+        // Date filtering logic
+        if (month && year) {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 1);
+            matchQuery.createdAt = { $gte: start, $lt: end };
+        } else if (year) {
+            const start = new Date(year, 0, 1);
+            const end = new Date(Number(year) + 1, 0, 1);
+            matchQuery.createdAt = { $gte: start, $lt: end };
+        } else if (startDate && endDate) {
+            matchQuery.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        }
+
         const bookings = await Booking.find(matchQuery);
 
-        // Group bookings by event
         const bookingsByEvent = {};
         for (const booking of bookings) {
             const eid = booking.event.toString();
@@ -155,6 +171,7 @@ export const getEventDetailedAnalytics = async (req, res) => {
                 eventId: event._id,
                 title: event.title,
                 city: event.city,
+                category: event.category,
                 date: event.eventDate,
                 totalSales,
                 totalTickets,
@@ -162,17 +179,94 @@ export const getEventDetailedAnalytics = async (req, res) => {
             });
         }
 
-        return handleResponse(res, 200, 'Event analytics', eventId ? analyticsList[0] : analyticsList);
+        // Grouped by city and category
+        const grouped = {};
+        for (const item of analyticsList) {
+            const key = `${item.city}_${item.category || 'Uncategorized'}`;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push(item);
+        }
+
+        const groupedArray = Object.entries(grouped).map(([key, events]) => {
+            const [city, category] = key.split('_');
+            return {
+                city,
+                category,
+                events
+            };
+        });
+
+        // Pagination
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const paginated = groupedArray.slice(skip, skip + parseInt(limit));
+
+        return handleResponse(res, 200, 'Event analytics', {
+            total: groupedArray.length,
+            page: parseInt(page),
+            totalPages: Math.ceil(groupedArray.length / parseInt(limit)),
+            data: paginated
+        });
     } catch (error) {
         return handleError(res, error);
     }
 };
 
+
+// Get All Bookings (Filtered & Paginated)
 export const getAllBookings = async (req, res) => {
     try {
-        const bookings = await Booking.find().populate('event', 'title city eventDate').populate('user', 'name email');
+        const { eventId, city, month, year, startDate, endDate, page = 1, limit = 10 } = req.query;
 
-        return handleResponse(res, 200, 'All bookings fetched', bookings);
+        const match = {};
+        if (eventId) match.event = eventId;
+
+        // Date filters
+        if (month && year) {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 1);
+            match.createdAt = { $gte: start, $lt: end };
+        } else if (year) {
+            const start = new Date(year, 0, 1);
+            const end = new Date(Number(year) + 1, 0, 1);
+            match.createdAt = { $gte: start, $lt: end };
+        } else if (startDate && endDate) {
+            match.createdAt = { $gte: new Date(startDate), $lte: new Date(endDate) };
+        }
+
+        // Initial find
+        let bookingsQuery = Booking.find(match)
+            .populate({ path: 'event', select: 'title city eventDate' })
+            .populate({ path: 'user', select: 'name email' });
+
+        // Filter by city after event populate
+        if (city) {
+            const allBookings = await bookingsQuery;
+            const filtered = allBookings.filter(b => b.event?.city?.toLowerCase() === city.toLowerCase());
+            const total = filtered.length;
+            const paginated = filtered.slice((page - 1) * limit, page * limit);
+            return handleResponse(res, 200, 'Filtered bookings by city', {
+                total,
+                page: parseInt(page),
+                totalPages: Math.ceil(total / limit),
+                data: paginated
+            });
+        } else {
+            const total = await Booking.countDocuments(match);
+            const skip = (parseInt(page) - 1) * parseInt(limit);
+
+            const bookings = await Booking.find(match)
+                .populate('event', 'title city eventDate')
+                .populate('user', 'name email')
+                .skip(skip)
+                .limit(parseInt(limit));
+
+            return handleResponse(res, 200, 'All bookings fetched', {
+                total,
+                page: parseInt(page),
+                totalPages: Math.ceil(total / limit),
+                data: bookings
+            });
+        }
     } catch (error) {
         return handleError(res, error);
     }

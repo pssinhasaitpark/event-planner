@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Socket.IO Test</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+</head>
+<body>
+  <h1>Socket.IO City Search Test</h1>
+  <input id="search" placeholder="Type city or state..." />
+  <ul id="results"></ul>
+
+  <script>
+    const socket = io('http://192.168.0.132:5000', {
+      transports: ['websocket'],
+    });
+
+    const input = document.getElementById('search');
+    const results = document.getElementById('results');
+
+    input.addEventListener('input', () => {
+      const query = input.value;
+      socket.emit('searchCities', query);
+    });
+
+    socket.on('citiesList', (cities) => {
+      results.innerHTML = '';
+      cities.forEach(city => {
+        const li = document.createElement('li');
+        li.textContent = `${city.city}, ${city.state}`;
+        results.appendChild(li);
+      });
+    });
+  </script>
+</body>
+</html>

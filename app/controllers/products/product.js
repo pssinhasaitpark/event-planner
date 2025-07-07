@@ -258,12 +258,34 @@ export const getAllOrders = async (req, res) => {
 // Product Analytics
 export const getProductAnalytics = async (req, res) => {
     try {
+        const { productId, month, year, startDate, endDate, page = 1, limit = 10 } = req.query;
+
         const match = {};
-        if (req.query.productId) {
-            match['products.product'] = new mongoose.Types.ObjectId(req.query.productId);
+
+        if (productId) {
+            match['products.product'] = new mongoose.Types.ObjectId(productId);
         }
 
-        const analytics = await ProductOrder.aggregate([
+        // Date filtering logic
+        if (month && year) {
+            const start = new Date(year, month - 1, 1);
+            const end = new Date(year, month, 1);
+            match.createdAt = { $gte: start, $lt: end };
+        } else if (year) {
+            const start = new Date(year, 0, 1);
+            const end = new Date(Number(year) + 1, 0, 1);
+            match.createdAt = { $gte: start, $lt: end };
+        } else if (startDate && endDate) {
+            match.createdAt = {
+                $gte: new Date(startDate),
+                $lte: new Date(endDate)
+            };
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const parsedLimit = parseInt(limit);
+
+        const basePipeline = [
             { $match: match },
             { $unwind: '$products' },
             {
@@ -294,9 +316,21 @@ export const getProductAnalytics = async (req, res) => {
                 }
             },
             { $sort: { totalSold: -1 } }
+        ];
+
+        const totalResult = await ProductOrder.aggregate([...basePipeline]);
+        const paginatedResult = await ProductOrder.aggregate([
+            ...basePipeline,
+            { $skip: skip },
+            { $limit: parsedLimit }
         ]);
 
-        return handleResponse(res, 200, 'Product analytics fetched', analytics);
+        return handleResponse(res, 200, 'Product analytics fetched', {
+            total: totalResult.length,
+            page: parseInt(page),
+            totalPages: Math.ceil(totalResult.length / parsedLimit),
+            data: paginatedResult
+        });
     } catch (error) {
         return handleError(res, error);
     }

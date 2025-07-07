@@ -1,5 +1,8 @@
-// app/sockets/citiesSocket.js
-import cities from 'indian-cities';
+import citiesModule from 'indian-cities';
+// const cities = citiesModule.default || citiesModule;
+
+
+const cities = citiesModule.default || citiesModule;
 
 export default function handleCitySocket(io) {
   io.on('connection', (socket) => {
