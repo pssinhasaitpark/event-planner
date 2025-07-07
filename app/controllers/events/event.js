@@ -63,28 +63,34 @@ export const createEvent = async (req, res) => {
     }
 };
 
-//for client with querry filters
 export const getAllEvents = async (req, res) => {
     try {
-        const { page = 1, limit = 10, title, city, layout, seating, kidFriendly, petFriendly, artist, startDate, endDate } = req.query;
+        const { page = 1, limit = 10, isActive, ...filters } = req.query;
 
-        const query = {};
+        // Auto-deactivate past events
+        await Event.updateMany(
+            { eventDate: { $lt: new Date() }, isActive: true },
+            { $set: { isActive: false } }
+        );
 
-        if (title) query.title = { $regex: title, $options: 'i' };
-        if (city) query.city = city;
-        if (layout) query.layout = layout;
-        if (seating) query.seating = seating;
-        if (kidFriendly !== undefined) query.kidFriendly = kidFriendly === 'true';
-        if (petFriendly !== undefined) query.petFriendly = petFriendly === 'true';
-        if (artist) query.artists = artist;
+        const query = { isDeleted: false };
 
-        // Date range filtering
-        if (startDate && endDate) {
-            query.eventDate = { $gte: new Date(startDate), $lte: new Date(endDate) };
-        } else if (startDate) {
-            query.eventDate = { $gte: new Date(startDate) };
-        } else if (endDate) {
-            query.eventDate = { $lte: new Date(endDate) };
+        if (filters.title) query.title = { $regex: filters.title, $options: 'i' };
+        if (filters.city) query.city = filters.city;
+        if (filters.layout) query.layout = filters.layout;
+        if (filters.seating) query.seating = filters.seating;
+        if (filters.category) query.category = filters.category;
+        if (filters.kidFriendly !== undefined) query.kidFriendly = filters.kidFriendly === 'true';
+        if (filters.petFriendly !== undefined) query.petFriendly = filters.petFriendly === 'true';
+        if (filters.artist) query.artists = filters.artist;
+        if (isActive !== undefined) query.isActive = isActive === 'true';
+
+        if (filters.startDate && filters.endDate) {
+            query.eventDate = { $gte: new Date(filters.startDate), $lte: new Date(filters.endDate) };
+        } else if (filters.startDate) {
+            query.eventDate = { $gte: new Date(filters.startDate) };
+        } else if (filters.endDate) {
+            query.eventDate = { $lte: new Date(filters.endDate) };
         }
 
         const skip = (parseInt(page) - 1) * parseInt(limit);
@@ -93,8 +99,7 @@ export const getAllEvents = async (req, res) => {
         const events = await Event.find(query)
             .sort({ eventDate: 1 })
             .skip(skip)
-            .limit(parseInt(limit))
-            .select('_id title banner eventDate location city');
+            .limit(parseInt(limit));
 
         return handleResponse(res, 200, 'Events fetched successfully', {
             events,
@@ -103,16 +108,51 @@ export const getAllEvents = async (req, res) => {
             totalPages: Math.ceil(total / parseInt(limit))
         });
     } catch (error) {
-        console.error('Error in getAllEvents:', error);
         return handleError(res, error);
     }
 };
 
-//for admin
+// ✅ Admin - Get All Events with active/inactive filter
 export const getAllEventsAdmin = async (req, res) => {
     try {
-        const events = await Event.find().sort({ eventDate: 1 });
-        return handleResponse(res, 200, 'Events fetched successfully', events);
+        const { page = 1, limit = 20, isActive, ...filters } = req.query;
+
+        await Event.updateMany(
+            { eventDate: { $lt: new Date() }, isActive: true },
+            { $set: { isActive: false } }
+        );
+
+        const query = { isDeleted: false };
+
+        if (filters.title) query.title = { $regex: filters.title, $options: 'i' };
+        if (filters.city) query.city = filters.city;
+        if (filters.layout) query.layout = filters.layout;
+        if (filters.seating) query.seating = filters.seating;
+        if (filters.category) query.category = filters.category;
+        if (isActive !== undefined) query.isActive = isActive === 'true';
+
+        if (filters.startDate && filters.endDate) {
+            query.eventDate = { $gte: new Date(filters.startDate), $lte: new Date(filters.endDate) };
+        } else if (filters.startDate) {
+            query.eventDate = { $gte: new Date(filters.startDate) };
+        } else if (filters.endDate) {
+            query.eventDate = { $lte: new Date(filters.endDate) };
+        }
+
+        const skip = (parseInt(page) - 1) * parseInt(limit);
+        const total = await Event.countDocuments(query);
+
+        const events = await Event.find(query)
+            .sort({ eventDate: 1 })
+            .skip(skip)
+            .limit(parseInt(limit));
+
+        return handleResponse(res, 200, 'Events fetched successfully', {
+            events,
+            total,
+            page: parseInt(page),
+            totalPages: Math.ceil(total / parseInt(limit))
+        });
     } catch (error) {
         return handleError(res, error);
     }
@@ -195,9 +235,28 @@ export const updateEvent = async (req, res) => {
 
 export const deleteEvent = async (req, res) => {
     try {
-        const deleted = await Event.findByIdAndDelete(req.params.id);
+        const deleted = await Event.findByIdAndUpdate(
+            req.params.id,
+            { isDeleted: true },
+            { new: true }
+        );
         if (!deleted) return handleResponse(res, 404, 'Event not found');
-        return handleResponse(res, 200, 'Event deleted successfully');
+        return handleResponse(res, 200, 'Event soft-deleted successfully', deleted);
+    } catch (error) {
+        return handleError(res, error);
+    }
+};
+
+
+export const toggleEventActive = async (req, res) => {
+    try {
+        const event = await Event.findById(req.params.id);
+        if (!event) return handleResponse(res, 404, 'Event not found');
+
+        event.isActive = !event.isActive;
+        await event.save();
+
+        return handleResponse(res, 200, 'Event active status toggled', event);
     } catch (error) {
         return handleError(res, error);
     }

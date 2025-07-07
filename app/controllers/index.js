@@ -1,5 +1,6 @@
 // app/controllers/index.js
 import * as userController from './user/user.js';
+import * as authController from './user/auth.js';
 import * as eventController from './events/event.js';
 import * as listController from './lists/artiste.js';
 import * as bookingController from './bookings/booking.js';
@@ -10,6 +11,7 @@ import * as quickLinkController from './pageContent/quickLink.js';
 import * as ourServicesController from './ourServices/ourServices.js';
 
 export {
+    authController,
     userController,
     eventController,
     listController,

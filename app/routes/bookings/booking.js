@@ -11,4 +11,6 @@ router.post('/verify', auth, bookingController.verifyPayment);
 router.get('/scan/:data', bookingController.scanQrCode);
 router.get('/', auth, requireAdmin, bookingController.getAllBookings);
 router.get('/analytics/event', auth, requireAdmin, bookingController.getEventDetailedAnalytics);
+
+
 export default router;
