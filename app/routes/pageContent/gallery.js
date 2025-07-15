@@ -9,6 +9,7 @@ router.get('/', galleryController.getAllGalleries);
 router.get('/:id', galleryController.getGalleryById);
 router.post('/',  mediaUploadMiddleware, galleryController.createGallery);
 router.put('/:id',  mediaUploadMiddleware, galleryController.updateGallery);
+
 router.delete('/:id',  galleryController.deleteGallery);
 
 export default router;
