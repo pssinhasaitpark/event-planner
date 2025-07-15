@@ -8,6 +8,7 @@ import productRoutes from './products/product.js';
 import faqRoutes from './pageContent/faq.js';  
 import policyRoutes from './pageContent/policyAndTerms.js';  
 import quickLinkRoutes from './pageContent/quickLink.js';  
+import galleryRoutes from './pageContent/gallery.js';  
 import ourServicesRoutes from './ourServices/ourServices.js';  
 
 export default function setupRoutes(app) {
@@ -20,5 +21,6 @@ export default function setupRoutes(app) {
   app.use('/api/v1/faq', faqRoutes);  
   app.use('/api/v1/policy', policyRoutes);  
   app.use('/api/v1/quickLink', quickLinkRoutes);  
+  app.use('/api/v1/gallery', galleryRoutes);  
   app.use('/api/v1/ourService', ourServicesRoutes);  
 }

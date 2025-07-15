@@ -41,7 +41,7 @@ const uploadAll = multer({
 }).fields([
   { name: 'images', maxCount: 1 },
   { name: 'galary', maxCount: 10 },
-  { name: 'videos', maxCount: 1 }
+  { name: 'videos', maxCount: 5 }
 ]);
 
 /* ------------------------ Unified Upload Middleware ------------------------ */

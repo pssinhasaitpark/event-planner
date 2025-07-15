@@ -9,6 +9,7 @@ import * as faqController from './pageContent/faq.js';
 import * as policyController from './pageContent/policyAndTerms.js';
 import * as quickLinkController from './pageContent/quickLink.js';
 import * as ourServicesController from './ourServices/ourServices.js';
+import * as galleryController from './pageContent/gallery.js';
 
 export {
     authController,
@@ -21,4 +22,5 @@ export {
     policyController,
     quickLinkController,
     ourServicesController,
+    galleryController,
 };

@@ -1,10 +1,13 @@
 // app/controllers/bookingController.js
-import { Booking, Event } from '../../models/index.js';
+import { Booking, Event, User } from '../../models/index.js';
 import qrcode from 'qrcode';
 import { handleResponse, handleError } from '../../utils/responseHandler.js';
 import crypto from 'crypto';
 import { razorpay } from '../../middlewares/razorpayInstance.js';
-
+import { cleanupPDF, generateBookingInvoice } from '../../middlewares/pdfGenerator.js';
+import path from 'path';
+import fs from 'fs';
+import { bookingConfirmationTemplate, sendEmail } from '../../middlewares/mailer.js';
 
 
 export const createBooking = async (req, res) => {
@@ -76,6 +79,9 @@ export const verifyPayment = async (req, res) => {
         const category = event.ticketCategories.find(cat => cat.name === booking.ticketCategory);
         category.remainingQuantity -= booking.quantity;
         await event.save();
+
+        const user = await User.findById(req.user.id);
+        await sendEmail(user.email, '🎫 Your Booking is Confirmed!', bookingConfirmationTemplate({ name: user.name, event, booking }));
 
         return handleResponse(res, 200, 'Payment verified and booking confirmed', booking);
     } catch (error) {
@@ -211,7 +217,6 @@ export const getEventDetailedAnalytics = async (req, res) => {
     }
 };
 
-
 // Get All Bookings (Filtered & Paginated)
 export const getAllBookings = async (req, res) => {
     try {
@@ -272,3 +277,70 @@ export const getAllBookings = async (req, res) => {
     }
 };
 
+// Generate and download booking invoice
+export const downloadBookingInvoice = async (req, res) => {
+    try {
+        const { bookingId } = req.params;
+
+        // Fetch booking with populated data
+        const booking = await Booking.findById(bookingId)
+            .populate('user', 'name email')
+            .populate('event', 'title venue city eventDate');
+
+        if (!booking) {
+            return handleResponse(res, 404, 'Booking not found');
+        }
+
+        // // Check if user owns this booking (optional security check)
+        // if (booking.user._id.toString() !== req.user.id) {
+        //     return handleResponse(res, 403, 'Unauthorized access to booking');
+        // }
+
+        // // Check if payment is completed (optional - you might want to allow invoice for all bookings)
+        // if (booking.paymentStatus !== 'Success' && booking.paymentStatus !== 'Confirmed') {
+        //     return handleResponse(res, 400, 'Invoice can only be generated for successful bookings');
+        // }
+
+        // Prepare data for PDF generation
+        const bookingData = {
+            booking,
+            user: booking.user,
+            event: booking.event
+        };
+
+        // Generate PDF invoice
+        const pdfPath = await generateBookingInvoice(bookingData);
+        const absolutePdfPath = path.resolve(pdfPath);
+
+        // Verify the file exists and is not empty
+        if (!fs.existsSync(absolutePdfPath)) {
+            return handleResponse(res, 500, 'Generated invoice file not found');
+        }
+
+        const stat = fs.statSync(absolutePdfPath);
+        if (stat.size === 0) {
+            return handleResponse(res, 500, 'Generated invoice is empty');
+        }
+
+        // Set response headers
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="booking_invoice_${booking._id}.pdf"`);
+
+        // Send the file
+        res.sendFile(absolutePdfPath, (err) => {
+            if (err) {
+                console.error('Error sending file:', err);
+                return handleResponse(res, 500, 'Error sending invoice');
+            }
+
+            // Clean up after sending
+            setTimeout(() => {
+                cleanupPDF(absolutePdfPath);
+            }, 1000);
+        });
+
+    } catch (error) {
+        console.error('Booking invoice download error:', error);
+        return handleError(res, error);
+    }
+};
