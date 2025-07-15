@@ -1,9 +1,13 @@
 // controllers/productController.js
 import mongoose from 'mongoose';
 import crypto from 'crypto';
-import { Product, Category, ProductOrder } from '../../models/index.js';
+import { Product, Category, ProductOrder, User } from '../../models/index.js';
 import { handleResponse, handleError } from '../../utils/responseHandler.js';
 import { razorpay } from '../../middlewares/razorpayInstance.js';
+import { cleanupPDF, generateProductInvoice } from '../../middlewares/pdfGenerator.js';
+import path from 'path';
+import fs from 'fs';
+import { orderConfirmationTemplate, sendEmail } from '../../middlewares/mailer.js';
 
 // Create Product
 export const createProduct = async (req, res) => {
@@ -174,9 +178,14 @@ export const verifyAndPlaceOrder = async (req, res) => {
         const { razorpay_order_id, razorpay_payment_id, razorpay_signature, products } = req.body;
 
         const body = razorpay_order_id + "|" + razorpay_payment_id;
-        const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_SECRET)
+        const expectedSignature = crypto.createHmac('sha256', process.env.RAZORPAY_KEY_SECRET)
             .update(body.toString())
             .digest('hex');
+
+            console.log("expectedSignature",expectedSignature);
+            console.log("razorpay_signature",razorpay_signature);
+
+            
 
         if (expectedSignature !== razorpay_signature) {
             return handleResponse(res, 400, 'Payment verification failed');
@@ -238,6 +247,19 @@ export const placeOrder = async (req, res) => {
             totalAmount,
             paymentStatus: 'Success'
         });
+
+        // Populate product names
+        const populatedOrder = await ProductOrder.findById(order._id).populate('products.product', 'name');
+
+        // Get user details
+        const user = await User.findById(req.user.id);
+
+        // Send confirmation email
+        await sendEmail(
+            user.email,
+            '🛍️ Your Order has been Placed Successfully!',
+            orderConfirmationTemplate({ name: user.name, order: populatedOrder })
+        );
 
         return handleResponse(res, 201, 'Order placed successfully (COD/Test)', order);
     } catch (error) {
@@ -332,6 +354,67 @@ export const getProductAnalytics = async (req, res) => {
             data: paginatedResult
         });
     } catch (error) {
+        return handleError(res, error);
+    }
+};
+
+export const downloadProductInvoice = async (req, res) => {
+    try {
+        const { orderId } = req.params;
+
+        // Fetch order with populated data
+        const order = await ProductOrder.findById(orderId).populate('user', 'name email').populate('products.product', 'name price');
+
+        if (!order) {
+            return handleResponse(res, 404, 'Order not found');
+        }
+
+        // // Check if user owns this order (optional security check)
+        // if (order.user._id.toString() !== req.user.id) {
+        //     return handleResponse(res, 403, 'Unauthorized access to order');
+        // }
+
+        // // Check if payment is completed
+        // if (order.paymentStatus !== 'Success') {
+        //     return handleResponse(res, 400, 'Invoice can only be generated for successful orders');
+        // }
+
+        // Prepare data for PDF generation
+        const orderData = { order, user: order.user, products: order.products };
+
+        // Generate PDF
+        const pdfPath = await generateProductInvoice(orderData);
+        const absolutePdfPath = path.resolve(pdfPath);
+
+        // Verify the file exists and is not empty
+        if (!fs.existsSync(absolutePdfPath)) {
+            return handleResponse(res, 500, 'Generated invoice file not found');
+        }
+
+        const stat = fs.statSync(absolutePdfPath);
+        if (stat.size === 0) {
+            return handleResponse(res, 500, 'Generated invoice is empty');
+        }
+
+        // Set headers for PDF download
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="product_invoice_${order._id}.pdf"`);
+
+        // Send file
+        res.sendFile(absolutePdfPath, (err) => {
+            if (err) {
+                console.error('Error sending PDF:', err);
+                return handleResponse(res, 500, 'Error generating invoice');
+            }
+
+            // Clean up PDF after sending
+            setTimeout(() => {
+                cleanupPDF(absolutePdfPath);
+            }, 1000);
+        });
+
+    } catch (error) {
+        console.error('Product invoice download error:', error);
         return handleError(res, error);
     }
 };

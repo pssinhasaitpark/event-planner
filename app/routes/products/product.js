@@ -25,4 +25,7 @@ router.post('/razorpay/order', auth, productController.createRazorpayOrder);
 router.post('/order/verify-payment', auth, productController.verifyAndPlaceOrder);
 
 
+router.get('/order/:orderId/invoice', auth, productController.downloadProductInvoice);
+
+
 export default router;

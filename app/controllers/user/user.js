@@ -46,11 +46,36 @@ export const updateUser = async (req, res) => {
 export const me = async (req, res) => {
     try {
         const userId = req.user.id;
-        const user = await User.findById(userId).select('-password');  
+        const user = await User.findById(userId).select('-password');
         return handleResponse(res, 200, 'user data fetched successfully', user);
 
     } catch (error) {
         // console.error(error);
+        return handleError(res, error);
+    }
+};
+
+export const getUserPurchasesAndBookings = async (req, res) => {
+    try {
+        const userId = req.user.id;
+
+        // Fetch bookings sorted by newest
+        const bookings = await Booking.find({ user: userId, paymentStatus: 'paid' })
+            .sort({ createdAt: -1 })
+            .populate('event', 'title city eventDate banner')
+            .select('-__v');
+
+        // Fetch product orders sorted by newest
+        const orders = await ProductOrder.find({ user: userId })
+            .sort({ createdAt: -1 })
+            .populate('products.product', 'name price images')
+            .select('-__v');
+
+        return handleResponse(res, 200, 'User purchases and bookings fetched', {
+            bookings,
+            orders
+        });
+    } catch (error) {
         return handleError(res, error);
     }
 };

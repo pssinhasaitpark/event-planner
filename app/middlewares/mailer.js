@@ -8,57 +8,36 @@ export const transporter = nodemailer.createTransport({
     },
 });
 
-
-export const sendGuestCredentialsMail = async (to, name, password) => {
+export const sendEmail = async (to, subject, html) => {
     const mailOptions = {
-        from: `"AI-Powered Psychometric Test" <${process.env.EMAIL_USER}>`,
+        from: `Event Planner <${process.env.EMAIL_USER}>`,
         to,
-        subject: "🎉 Your Guest Access to AI-powered psychometric testing",
-        html: `
-            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
-                <h2>Welcome to <span style="color:#4A90E2;">AI-powered psychometric testing</span>, ${name}!</h2>
-                <p>We're excited to have you try our <strong>AI-powered psychometric testing platform</strong>.</p>
-                
-                <p>Here are your guest login credentials:</p>
-                <ul>
-                    <li><strong>Email:</strong> ${to}</li>
-                    <li><strong>Password:</strong> ${password}</li>
-                </ul>
-
-                <p>🔒 Please make sure to change your password after logging in.</p>
-
-                <p>Explore cognitive insights and discover your strengths.</p>
-
-                <p>Cheers,<br/>
-                The <strong>AI-Powered Psychometric Test</strong> Team</p>
-            </div>
-        `,
+        subject,
+        html,
     };
-
     await transporter.sendMail(mailOptions);
 };
 
-
 export const sendRegisterWelcomeMail = async (to, name) => {
     const mailOptions = {
-        from: `"AI-Powered Psychometric Test" <${process.env.EMAIL_USER}>`,
+        from: `"Event Planner" <${process.env.EMAIL_USER}>`,
         to,
-        subject: "🎉 Welcome to AI-Powered Psychometric Test !",
+        subject: "🎉 Welcome to Event Planner!",
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
                 <h2>Hi ${name},</h2>
-                <p>Welcome to <strong>AI-Powered Psychometric Test</strong> – your personalized platform for AI-powered psychometric testing and cognitive insights.</p>
-                
-                <p>You’ve successfully registered and can now begin exploring your psychological strengths and mental models using our cutting-edge tools.</p>
+                <p>Welcome to <strong>Event Planner</strong> – your go-to platform for discovering, booking, and attending amazing events!</p>
 
-                <p>🔐 You can securely log in using your email and password on our platform.</p>
+                <p>You’ve successfully registered and can now explore concerts, workshops, exhibitions, and more.</p>
 
-                <p>If you need any assistance, feel free to reply to this email.</p>
+                <p>🔐 Log in using your registered email and password to get started.</p>
 
-                <p>Enjoy the experience!</p>
+                <p>Need help? Just reply to this email or visit our Help Center.</p>
 
-                <p>Best regards,<br/>
-                The <strong>AI-Powered Psychometric Test</strong> Team</p>
+                <p>We’re excited to have you on board!</p>
+
+                <p>Cheers,<br/>
+                The <strong>Event Planner</strong> Team</p>
             </div>
         `,
     };
@@ -71,14 +50,14 @@ export const sendResetEmail = async (to, token) => {
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
     const mailOptions = {
-        from: `"AI-Powered Psychometric Test" <${process.env.EMAIL_USER}>`,
+        from: `"Event Planner" <${process.env.EMAIL_USER}>`,
         to,
-        subject: "🔐 Reset Your Password - AI-Powered Psychometric Test",
+        subject: "🔐 Reset Your Password - Event Planner",
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
                 <h2 style="color: #4A90E2;">Reset Your Password</h2>
                 
-                <p>We received a request to reset your password for your AI-Powered Psychometric Test account associated with <strong>${to}</strong>.</p>
+                <p>We received a request to reset your password for your <strong>Event Planner</strong> account associated with <strong>${to}</strong>.</p>
                 
                 <p>Click the button below to reset your password. This link is valid for one hour:</p>
 
@@ -87,12 +66,12 @@ export const sendResetEmail = async (to, token) => {
                    Reset Password
                 </a>
 
-                <p>If you didn’t request a password reset, please ignore this email. Your password will remain unchanged.</p>
+                <p>If you didn’t request this, you can safely ignore the email — your password will remain unchanged.</p>
 
-                <p>Need help? Just reply to this email—we’re here for you.</p>
+                <p>Need assistance? Just reply to this email.</p>
 
                 <p>Warm regards,<br/>
-                The <strong>AI-Powered Psychometric Test</strong> Team</p>
+                The <strong>Event Planner</strong> Team</p>
             </div>
         `,
     };
@@ -103,28 +82,57 @@ export const sendResetEmail = async (to, token) => {
 
 export const sendPasswordResetSuccessEmail = async (to, name) => {
     const mailOptions = {
-        from: `"AI-Powered Psychometric Test" <${process.env.EMAIL_USER}>`,
+        from: `"Event Planner" <${process.env.EMAIL_USER}>`,
         to,
-        subject: "✅ Your Password Has Been Successfully Reset",
+        subject: "✅ Your Event Planner Password Was Reset",
         html: `
             <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6; padding: 20px;">
                 <h2 style="color: #4A90E2;">Hi ${name},</h2>
                 
-                <p>We're confirming that your password for <strong>AI-Powered Psychometric Test</strong> has been successfully changed.</p>
+                <p>This is a confirmation that your password for <strong>Event Planner</strong> has been successfully changed.</p>
                 
-                <p>If you made this change, no further action is needed.</p>
+                <p>If this was you, you’re all set. If not, please <a href="mailto:${process.env.EMAIL_USER}" style="color: #d32f2f; text-decoration: underline;">contact support</a> immediately.</p>
 
-                <p>If you didn’t change your password, please <a href="mailto:${process.env.EMAIL_USER}" style="color: #d32f2f; text-decoration: underline;">contact our support team</a> immediately.</p>
+                <p>🔐 For better security, always use a strong and unique password.</p>
 
-                <p>🔐 Always ensure your account is protected by using a strong, unique password.</p>
+                <p>Thanks for using Event Planner!</p>
 
-                <p>Thanks for using AI-Powered Psychometric Test!</p>
-
-                <p>Best regards,<br/>
-                The <strong>AI-Powered Psychometric Test</strong> Team</p>
+                <p>Best,<br/>
+                The <strong>Event Planner</strong> Team</p>
             </div>
         `,
     };
 
     await transporter.sendMail(mailOptions);
 };
+
+
+export const bookingConfirmationTemplate = ({ name, event, booking }) => `
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2 style="color:#4A90E2;">Hi ${name},</h2>
+        <p>Thank you for booking <strong>${event.title}</strong> on <strong>${new Date(event.eventDate).toDateString()}</strong> in <strong>${event.city}</strong>.</p>
+        <h3>🎫 Booking Summary</h3>
+        <ul>
+            <li><strong>Ticket Category:</strong> ${booking.ticketCategory}</li>
+            <li><strong>Quantity:</strong> ${booking.quantity}</li>
+            <li><strong>Total Paid:</strong> ₹${booking.amount}</li>
+        </ul>
+        <p>Your QR code is available in your dashboard.</p>
+        <p>We look forward to seeing you at the event!</p>
+        <p>Cheers,<br/><strong>Event Planner</strong> Team</p>
+    </div>
+`;
+
+export const orderConfirmationTemplate = ({ name, order }) => `
+    <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+        <h2 style="color:#4A90E2;">Hi ${name},</h2>
+        <p>Thank you for shopping with <strong>Event Planner</strong>!</p>
+        <h3>🛍️ Order Summary</h3>
+        <ul>
+            ${order.products.map(p => `<li>${p.quantity} × ${p.product.name} — ₹${p.price}</li>`).join('')}
+        </ul>
+        <p><strong>Total Paid:</strong> ₹${order.totalAmount}</p>
+        <p>Your order is confirmed. Our team will reach out soon.</p>
+        <p>Regards,<br/><strong>Event Planner</strong> Team</p>
+    </div>
+`;

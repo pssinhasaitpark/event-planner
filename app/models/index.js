@@ -10,6 +10,7 @@ import FAQ from './pageContent/faq.js';
 import Policy from './pageContent/policyAndTerms.js'; 
 import QuickLink from './pageContent/quickLink.js'; 
 import Service from './ourServices/ourServices.js'; 
+import Gallery from './pageContent/gallery.js'; 
 
 export {
     User,
@@ -23,4 +24,5 @@ export {
     Policy,
     QuickLink,
     Service,
+    Gallery,
 };

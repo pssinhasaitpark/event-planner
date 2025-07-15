@@ -56,6 +56,8 @@ export const optionalAuth = async (req, res, next) => {
 };
 
 export const requireAdmin = (req, res, next) => {
+  console.log("req.user?.role",req.user?.role);
+  
   if (req.user?.role !== 'admin') {
     return handleResponse(res, 403, 'Access denied', null, true);
   }

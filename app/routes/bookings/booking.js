@@ -12,5 +12,7 @@ router.get('/scan/:data', bookingController.scanQrCode);
 router.get('/', auth, requireAdmin, bookingController.getAllBookings);
 router.get('/analytics/event', auth, requireAdmin, bookingController.getEventDetailedAnalytics);
 
+router.get('/:bookingId/invoice', auth, bookingController.downloadBookingInvoice);
+
 
 export default router;

@@ -9,7 +9,7 @@ router.get('/me', auth, userController.me);
 
 router.get('/users', auth, requireAdmin, userController.getUsers);
 router.get('/:id', auth, requireAdmin, userController.getUserById);
+router.get('/booking-orders', auth, userController.getUserPurchasesAndBookings);
 router.put('/:id', auth,userController.updateUser);
-
 
 export default router;
